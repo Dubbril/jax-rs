@@ -1,5 +1,7 @@
 package org.koushik.javabrains.messenger.resources;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import javax.ws.rs.BeanParam;
@@ -11,7 +13,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.Status;
 
 import org.koushik.javabrains.messenger.model.Message;
 import org.koushik.javabrains.messenger.resources.beans.MessageFilterBean;
@@ -52,14 +58,39 @@ public class MessageResource {
 	}
 
 	@POST
-	public Message addMessage(Message message) {
-		return messageService.addMessage(message);
+	public Response addMessage(Message message, @Context UriInfo uriInfo) {
+		Message newMessage = messageService.addMessage(message);
+		String newId = String.valueOf(newMessage.getId());
+		URI uri = uriInfo.getAbsolutePathBuilder().path(newId).build();
+		return Response.created(uri).entity(newMessage).build();
 	}
 
 	@GET
 	@Path("/{messageId}")
-	public Message getMessage(@PathParam("messageId") long id) {
-		return messageService.getMessage(id);
+	public Message getMessage(@PathParam("messageId") long id, @Context UriInfo uriInfo) {
+		Message message = messageService.getMessage(id);
+		message.addLink(getUriForSelf(uriInfo, message), "self");
+		message.addLink(getUriForProfile(uriInfo, message), "profile");
+		message.addLink(getUriForComments(uriInfo, message), "comments");
+		return message;
+	}
+
+	private String getUriForComments(UriInfo uriInfo, Message message) {
+		return uriInfo.getBaseUriBuilder().
+				path(MessageResource.class).
+				path(MessageResource.class,"getCommentResouces").
+				path(CommentResources.class)
+				.resolveTemplate("messageId", message.getId())
+				.build().toString();
+	}
+
+	private String getUriForProfile(UriInfo uriInfo, Message message) {
+		return uriInfo.getBaseUriBuilder().path(ProfileResource.class).path(message.getAuthor()).build().toString();
+	}
+
+	private String getUriForSelf(UriInfo uriInfo, Message message) {
+		return uriInfo.getBaseUriBuilder().path(MessageResource.class).path(Long.toString(message.getId())).build()
+				.toString();
 	}
 
 	@Path("/{messageId}/comments")
