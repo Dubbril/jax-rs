@@ -1,4 +1,4 @@
-package org.koushik.javabrains.rest.client;
+package org.koushik.javabrains.messenger.rest;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;

@@ -1,4 +1,4 @@
-package org.koushik.javabrains.rest.client;
+package org.koushik.javabrains.messenger.rest;
 
 import java.util.List;
 
